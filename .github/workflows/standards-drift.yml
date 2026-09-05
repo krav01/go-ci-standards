@@ -7,10 +7,6 @@ on:
         description: Standards version used by the caller repository
         required: true
         type: string
-      latest_version:
-        description: Latest reviewed standards version
-        required: true
-        type: string
       fail_on_drift:
         description: Fail when versions differ
         required: false
@@ -30,7 +26,7 @@ jobs:
         shell: bash
         env:
           CURRENT_VERSION: ${{ inputs.current_version }}
-          LATEST_VERSION: ${{ inputs.latest_version }}
+          LATEST_VERSION: '1.4.0'
           FAIL_ON_DRIFT: ${{ inputs.fail_on_drift }}
         run: |
           set -euo pipefail
