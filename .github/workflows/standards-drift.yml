@@ -1,0 +1,44 @@
+name: Reusable standards drift check
+
+on:
+  workflow_call:
+    inputs:
+      current_version:
+        description: Standards version used by the caller repository
+        required: true
+        type: string
+      latest_version:
+        description: Latest reviewed standards version
+        required: true
+        type: string
+      fail_on_drift:
+        description: Fail when versions differ
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Standards drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Compare baseline versions
+        shell: bash
+        env:
+          CURRENT_VERSION: ${{ inputs.current_version }}
+          LATEST_VERSION: ${{ inputs.latest_version }}
+          FAIL_ON_DRIFT: ${{ inputs.fail_on_drift }}
+        run: |
+          set -euo pipefail
+          if [[ "$CURRENT_VERSION" == "$LATEST_VERSION" ]]; then
+            echo "Standards baseline is current: $CURRENT_VERSION"
+            exit 0
+          fi
+          echo "::warning title=Development standards drift::Repository uses baseline $CURRENT_VERSION; reviewed public baseline is $LATEST_VERSION."
+          if [[ "$FAIL_ON_DRIFT" == 'true' ]]; then
+            exit 1
+          fi
