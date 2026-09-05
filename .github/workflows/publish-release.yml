@@ -1,0 +1,54 @@
+name: Publish public CI release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish, without v prefix
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Validate release state
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          test "$version" = "$REQUESTED_VERSION"
+          grep -Fq "## $version" CHANGELOG.md
+          if git rev-parse "v$version" >/dev/null 2>&1; then
+            echo "Tag v$version already exists" >&2
+            exit 1
+          fi
+          test "${{ github.ref_name }}" = "main"
+      - name: Create tag and GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          tag="v$REQUESTED_VERSION"
+          git tag -a "$tag" -m "Public Go CI standards $REQUESTED_VERSION"
+          git push origin "$tag"
+          awk -v version="$REQUESTED_VERSION" '
+            $0 == "## " version {capture=1; next}
+            capture && /^## / {exit}
+            capture {print}
+          ' CHANGELOG.md > /tmp/release-notes.md
+          gh release create "$tag" --title "$tag" --notes-file /tmp/release-notes.md --verify-tag

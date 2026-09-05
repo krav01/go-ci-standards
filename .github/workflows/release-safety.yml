@@ -1,0 +1,41 @@
+name: Public CI release safety
+
+on:
+  pull_request:
+    paths:
+      - VERSION
+      - CHANGELOG.md
+      - .github/workflows/go-ci.yml
+      - .github/workflows/standards-drift.yml
+      - .github/workflows/release-safety.yml
+      - .github/workflows/publish-release.yml
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+      - CHANGELOG.md
+      - .github/workflows/go-ci.yml
+      - .github/workflows/standards-drift.yml
+      - .github/workflows/release-safety.yml
+      - .github/workflows/publish-release.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Validate version consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          test -n "$version"
+          grep -Fq "## $version" CHANGELOG.md
+          grep -Fq "LATEST_VERSION: '$version'" .github/workflows/standards-drift.yml
+          echo "Public CI version references are consistent: $version"
