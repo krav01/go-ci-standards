@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.0
+
+- add release/SHA verification guidance for consumer standards pins;
+- require immutable SHA scanning across workflow files;
+- define CI duration budgets for fast, normal, and high-risk verification paths;
+- strengthen automatic standards-upgrade validation before opening a PR;
+- prepare consumer integration for richer impact planning metadata.
+
 ## 1.6.0
 
 - define standards-only fast paths so consumer repositories can skip heavy verification when only standards metadata changes;
